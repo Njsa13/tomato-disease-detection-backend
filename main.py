@@ -2,15 +2,18 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
 from io import BytesIO
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from tensorflow.keras.models import load_model
 import os
+from os import environ as env
+from fastapi import HTTPException, status
 
 app = FastAPI()
 
 origins = [
     "http://localhost",
     "http://localhost:3000",
+    "https://tomato-disease-detection-frontend-nu.vercel.app/"
 ]
 app.add_middleware(
     CORSMiddleware,
@@ -38,7 +41,7 @@ CLASS_NAMES = [
 
 @app.get("/ping")
 async def ping():
-    return "Check ping success"
+    return f"Check ping success, secret = {env['MY_VARIABLE']}"
 
 
 def read_file_as_image(data) -> np.ndarray:
@@ -49,14 +52,18 @@ def read_file_as_image(data) -> np.ndarray:
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
-    image = read_file_as_image(await file.read())
-    img_batch = np.expand_dims(image, 0)
-    prediction = MODEL.predict(img_batch)
-    prediction_class = CLASS_NAMES[np.argmax(prediction[0])]
-    confidence = np.max(prediction[0])
+    try:
+        image = read_file_as_image(await file.read())
+        img_batch = np.expand_dims(image, 0)
+        prediction = MODEL.predict(img_batch)
+        prediction_class = CLASS_NAMES[np.argmax(prediction[0])]
+        confidence = np.max(prediction[0])
 
-    return {
-        'class': prediction_class,
-        'confidence': float(confidence)
-    }
-
+        return {
+            'class': prediction_class,
+            'confidence': float(confidence)
+        }
+    except (UnidentifiedImageError, ValueError):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to process the image. Make sure it is a valid image file.")
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Server Error.")
