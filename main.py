@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
 from io import BytesIO
 from PIL import Image
-import tflite_runtime.interpreter as tflite
+import tflite
 import os
 
 app = FastAPI()
@@ -49,7 +49,7 @@ async def ping():
 def read_file_as_image(data) -> np.ndarray:
     image = Image.open(BytesIO(data))
     image = image.convert("RGB")
-    image = image.resize((128, 128))
+    image = image.resize((128, 256))
     image = np.array(image) / 255.0
     return image
 
