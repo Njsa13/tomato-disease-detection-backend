@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
 from io import BytesIO
 from PIL import Image
-import tensorflow as tf
+import tflite_runtime.interpreter as tflite
 import os
 
 app = FastAPI()
@@ -24,7 +24,7 @@ app.add_middleware(
 PATH = os.path.join(os.path.join(os.path.dirname(__file__), 'models'), 'model.tflite')
 
 # Memuat model TensorFlow Lite
-interpreter = tf.lite.Interpreter(model_path=PATH)
+interpreter = tflite.Interpreter(model_path=PATH)
 interpreter.allocate_tensors()
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
