@@ -1,4 +1,4 @@
-tensorflow==2.16.1
+keras==3.4.1
 fastapi==0.111.0
 uvicorn==0.29.0
 python-multipart

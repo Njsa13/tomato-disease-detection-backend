@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
 from io import BytesIO
 from PIL import Image
-import tensorflow as tf
+from keras.models import load_model
 import os
 
 app = FastAPI()
@@ -21,14 +21,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-PATH = os.path.join(os.path.join(os.path.dirname(__file__), 'models'), 'model.tflite')
-
-# Memuat model TensorFlow Lite
-interpreter = tf.lite.Interpreter(model_path=PATH)
-interpreter.allocate_tensors()
-input_details = interpreter.get_input_details()
-output_details = interpreter.get_output_details()
-
+PATH = os.path.join(os.path.join(os.path.dirname(__file__), 'models'), 'model.h5')
+MODEL = load_model(PATH)
 CLASS_NAMES = [
     "Bacterial Spot",
     "Early Blight",
@@ -49,26 +43,18 @@ async def ping():
 def read_file_as_image(data) -> np.ndarray:
     image = Image.open(BytesIO(data))
     image = image.convert("RGB")
-    image = image.resize((128, 256))
+    image = image.resize((128, 128))
     image = np.array(image) / 255.0
     return image
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
     image = read_file_as_image(await file.read())
-    img_batch = np.expand_dims(image, 0).astype(np.float32)
-    
-    # Menyiapkan input tensor
-    interpreter.set_tensor(input_details[0]['index'], img_batch)
-    
-    # Melakukan inferensi
-    interpreter.invoke()
-    
-    # Mengambil output tensor
-    predictions = interpreter.get_tensor(output_details[0]['index'])
-
+    img_batch = np.expand_dims(image, 0)
+    predictions = MODEL.predict(img_batch)
     predicted_class = CLASS_NAMES[np.argmax(predictions[0])]
     confidence = np.max(predictions[0])
+
     return {
         'class': predicted_class,
         'confidence': float(confidence)
