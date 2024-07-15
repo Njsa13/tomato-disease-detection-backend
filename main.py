@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
 from io import BytesIO
 from PIL import Image
-from tensorflow.keras.models import load_model
+from keras.models import load_model
 import os
 
 app = FastAPI()
