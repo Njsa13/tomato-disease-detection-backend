@@ -11,7 +11,7 @@ app = FastAPI()
 origins = [
     "http://localhost",
     "http://localhost:3000",
-    "https://tomato-disease-detection-frontend-nu.vercel.app/"
+    "https://tomato-disease-detection-frontend-nu.vercel.app"
 ]
 app.add_middleware(
     CORSMiddleware,
